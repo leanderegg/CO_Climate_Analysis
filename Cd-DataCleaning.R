@@ -20,4 +20,12 @@ quartz()
 
 
 ## 2014-2015 data
+hightest <- read.csv(file.choose(), skip=13)
+lowtest <- read.csv(file.choose(), skip=13)
+plot(lowtest$Value, type="l", col="red")
+lines(hightest$Value, type="l", col="blue")
+abline(h=0)
+
+test <- read.csv(file.choose(), skip=13)
+
 
