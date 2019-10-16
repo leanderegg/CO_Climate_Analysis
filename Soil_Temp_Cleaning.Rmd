@@ -1,0 +1,211 @@
+---
+title: "Soil Temps"
+author: "Coleson Kastelic"
+date: "October 3, 2019"
+output: html_document
+---
+Libraries and Setting timezone for US/Denver to clear strptime warning
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(readr)
+Sys.setenv(TZ='America/Denver')
+```
+
+2014-2015 Data Cleaning/Formating Date.Time to work
+```{r,echo=FALSE, message=FALSE, results='hide'}
+#PIPO Plots
+Pipo.H.E.2014_15 <- read_csv("CO_soil_temps/2014-2015/T11L_14_PIPO-H-E_091314-XXXXXX_soil.csv",skip=13) %>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Pipo.H.E.2014_15$Date.Time<-format(strptime(Pipo.H.E.2014_15$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Pipo.H.E.2014_15$Date.Time<-as_datetime(ymd_hm(Pipo.H.E.2014_15$Date.Time))
+
+Pipo.H.B.2014_15 <- read_csv('CO_soil_temps/2014-2015/T49L_14_PIPO-H-B_091314-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Pipo.H.B.2014_15$Date.Time<-format(strptime(Pipo.H.B.2014_15$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Pipo.H.B.2014_15$Date.Time<-as_datetime(ymd_hm(Pipo.H.B.2014_15$Date.Time))
+
+Pipo.L.C.2014_15 <- read_csv('CO_soil_temps/2014-2015/T50L_14_PIPO-L-C_062014-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Pipo.L.C.2014_15$Date.Time<-format(strptime(Pipo.L.C.2014_15$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Pipo.L.C.2014_15$Date.Time<-as_datetime(ymd_hm(Pipo.L.C.2014_15$Date.Time))
+
+Pipo.L.D.2014_15 <- read_csv('CO_soil_temps/2014-2015/T59L_14_PIPO-L-D_070314-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Pipo.L.D.2014_15$Date.Time<-format(strptime(Pipo.L.D.2014_15$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Pipo.L.D.2014_15$Date.Time<-as_datetime(ymd_hm(Pipo.L.D.2014_15$Date.Time))
+
+Pipo.L.A.2014_15 <- read_csv('CO_soil_temps/2014-2015/T63L_14_PIPO-L-A_091314-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Pipo.L.A.2014_15$Date.Time<-format(strptime(Pipo.L.A.2014_15$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Pipo.L.A.2014_15$Date.Time<-as_datetime(ymd_hm(Pipo.L.A.2014_15$Date.Time))
+
+#POTR Plots
+Potr.H.B.2014_15 <- read_csv('CO_soil_temps/2014-2015/T28L_14_POTR-H-B_070314-063015_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Potr.H.B.2014_15$Date.Time<-format(strptime(Potr.H.B.2014_15$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Potr.H.B.2014_15$Date.Time<-as_datetime(ymd_hm(Potr.H.B.2014_15$Date.Time))
+
+Potr.H.A.2014_15 <- read_csv('CO_soil_temps/2014-2015/T45L_14_POTR-H-A_062014-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Potr.H.A.2014_15$Date.Time<-format(strptime(Potr.H.A.2014_15$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Potr.H.A.2014_15$Date.Time<-as_datetime(ymd_hm(Potr.H.A.2014_15$Date.Time))
+
+#ABLA Plots
+Abla.H.D.2014_15 <- read_csv('CO_soil_temps/2014-2015/T22L_14_ABLA-H-D_070314-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Abla.H.D.2014_15$Date.Time<-format(strptime(Abla.H.D.2014_15$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Abla.H.D.2014_15$Date.Time<-as_datetime(ymd_hm(Abla.H.D.2014_15$Date.Time))
+
+Abla.L.B.2014_15 <- read_csv('CO_soil_temps/2014-2015/T23L_14_ABLA-L-B_062014-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Abla.L.B.2014_15$Date.Time<-format(strptime(Abla.L.B.2014_15$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Abla.L.B.2014_15$Date.Time<-as_datetime(ymd_hm(Abla.L.B.2014_15$Date.Time))
+```
+
+Anylsis 2014-15
+```{r}
+Soil.2014_15.All <- Abla.H.D.2014_15 %>%
+  select(Date.Time)
+
+Abla.H.D.2014_15.Temp<-as.vector(Abla.H.D.2014_15$Temp)
+Abla.L.B.2014_15.Temp<-as.vector(Abla.L.B.2014_15$Temp)
+Potr.H.A.2014_15.Temp<-as.vector(Potr.H.A.2014_15$Temp)
+Potr.H.B.2014_15.Temp<-as.vector(Potr.H.B.2014_15$Temp)
+Pipo.H.B.2014_15.Temp<-as.vector(Pipo.H.B.2014_15$Temp)
+Pipo.H.E.2014_15.Temp<-as.vector(Pipo.H.E.2014_15$Temp)
+Pipo.L.A.2014_15.Temp<-as.vector(Pipo.L.A.2014_15$Temp)
+Pipo.L.C.2014_15.Temp<-as.vector(Pipo.L.C.2014_15$Temp)
+Pipo.L.D.2014_15.Temp<-as.vector(Pipo.L.D.2014_15$Temp)
+
+Soil.2014_15.All$Abla.H.D.2014<-Abla.H.D.2014_15.Temp
+Soil.2014_15.All$Abla.L.B.2014<-Abla.L.B.2014_15.Temp
+Soil.2014_15.All$Potr.H.A.2014<-Potr.H.A.2014_15.Temp
+#Soil.2014_15.All$Potr.H.B.2014<-Potr.H.B.2014_15.Temp
+Soil.2014_15.All$Pipo.H.B.2014<-Pipo.H.B.2014_15.Temp
+Soil.2014_15.All$Pipo.H.E.2014<-Pipo.H.E.2014_15.Temp
+Soil.2014_15.All$Pipo.L.A.2014<-Pipo.L.A.2014_15.Temp
+Soil.2014_15.All$Pipo.L.C.2014<-Pipo.L.C.2014_15.Temp
+Soil.2014_15.All$Pipo.L.D.2014<-Pipo.L.D.2014_15.Temp
+
+```
+
+2014-2015 Plots
+```{r}
+#Plots PIPO-H to PIPO-L
+ggplot(Pipo.H.E.2014_15,aes(x=Date.Time,y=Temp,color='Temp'))+
+  geom_line()+geom_abline(slope=0,intercept=0,color='black')+
+  xlab('Date')+ylab('Tempurature')+ggtitle('Soil Tempurature Pipo-H-E 2014-2015')+
+  scale_x_datetime(limits=c(as.POSIXct('2014-10-25 01:01:00'),as.POSIXct('2015-4-01 01:01:00')))+
+  theme(legend.title=element_blank())
+
+ggplot(Pipo.H.B.2014_15,aes(x=Date.Time,y=Temp,color='Temp'))+
+  geom_line()+geom_abline(slope=0,intercept=0,color='black')+
+  xlab('Date')+ylab('Tempurature')+ggtitle('Soil Tempurature Pipo-H-B 2014-2015')+
+  scale_x_datetime(limits=c(as.POSIXct('2014-10-25 01:01:00'),as.POSIXct('2015-5-01 01:01:00')))+
+  theme(legend.title=element_blank())
+
+ggplot(Pipo.L.C.2014_15,aes(x=Date.Time,y=Temp,color='Temp'))+
+  geom_line()+geom_abline(slope=0,intercept=0,color='black')+
+  xlab('Date')+ylab('Tempurature')+ggtitle('Soil Tempurature Pipo-L-C 2014-2015')+
+  scale_x_datetime(limits=c(as.POSIXct('2014-10-25 01:01:00'),as.POSIXct('2015-5-01 01:01:00')))+
+  theme(legend.title=element_blank())
+
+#Plots POTR
+ggplot(Potr.H.B.2014_15,aes(x=Date.Time,y=Temp,color='Temp'))+
+  geom_line()+geom_abline(slope=0,intercept=0,color='black')+
+  xlab('Date')+ylab('Tempurature')+ggtitle('Soil Tempurature Potr-H-B 2014-2015')+
+  scale_x_datetime(limits=c(as.POSIXct('2014-11-01 1:01:00'),as.POSIXct('2015-06-01 1:01:00')))+
+  theme(legend.title=element_blank())
+
+#Plots ABLA
+ggplot(Abla.H.D.2014_15,aes(x=Date.Time,y=Temp,color='Temp'))+
+  geom_line()+geom_abline(slope=0,intercept=0,color='black')+
+  xlab('Date')+ylab('Tempurature')+ggtitle('Soil Tempurature ABLA-H-D 2014-2015')+
+  scale_x_datetime(limits=c(as.POSIXct('2014-11-01 1:01:00'),as.POSIXct('2015-06-17 1:01:00')))+
+  theme(legend.title=element_blank())
+
+#Multi Plots
+ggplot(Soil.2014_15.All,aes(x=Date.Time))+
+  geom_line(aes(y=Pipo.L.C.2014,color='PIPO-L-C'))+
+  geom_line(aes(y=Pipo.L.A.2014,color='PIPO-L-A'))+
+  geom_line(aes(y=Pipo.L.D.2014,color='PIPO-L-D'))+
+  geom_line(aes(y=Pipo.H.B.2014,color='PIPO-H-B'))+
+  geom_line(aes(y=Pipo.H.E.2014,color='PIPO-H-E'))+
+  geom_abline(slope=0,intercept=0,color='black')+
+  xlab('Date')+ylab('Tempurature')+ggtitle('Soil Tempurature PIPO-H to PIPO-L 2014-2015')+
+  scale_x_datetime(limits=c(as.POSIXct('2014-11-01 1:01:00'),as.POSIXct('2014-12-01 21:01:00')))+
+  theme(legend.title=element_blank())
+```
+
+2015-2016 Cleaning/Formating Date.Time
+```{r,echo=FALSE, message=FALSE, results='hide'}
+#PIPO
+Pipo.H.B.2015_16 <- read_csv('CO_soil_temps/2015-2016/T32L_14_PIPO-H-B_082515-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Pipo.H.B.2015_16$Date.Time<-format(strptime(Pipo.H.B.2015_16$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Pipo.H.B.2015_16$Date.Time<-as_datetime(ymd_hm(Pipo.H.B.2015_16$Date.Time))
+
+
+```
+
+```{r}
+Test <- Pipo.H.B.All %>%
+  select(Date.Time) %>%
+  filter(Date.Time>as.POSIXct('2014-10-01 01:01:00'))%>%
+  filter(Date.Time<as.POSIXct('2015-05-01 01:01:00'))
+  
+Test1<-Pipo.H.B.2014_15 %>%
+  filter(Date.Time>as.POSIXct('2014-10-01 01:01:00')) %>%
+  filter(Date.Time<as.POSIXct('2015-05-01 01:01:00')) 
+
+Test.1<-as.vector(Test1$Temp)
+Test2<-Pipo.H.B.2015_16 %>%
+  filter(Date.Time>as.POSIXct('2015-10-01 01:00:00'))%>%
+  filter(Date.Time<as.POSIXct('2016-04-30 1:00:00'))
+  #select(-c(Date.Time=as.POSIXct('2016-02-29 01:00:00')))
+  
+Test.2<-as.vector(Test2$Temp)
+Test$Pipo.H.B.14_15<-Test.1
+Test$Pipo.H.B15_16<-Test.2
+```
+Data Testing
+```{r}
+Pipo.H.B.All<-Pipo.H.B.2014_15 %>%
+  select(Date.Time)
+
+Pipo.H.B.2015_16.Temp<-as.vector(Pipo.H.B.2015_16$Temp)
+
+Pipo.H.B.All$Pipo.H.B.2014_15<-Pipo.H.B.2014_15.Temp
+Pipo.H.B.All$Pipo.H.B.2015_16<-Pipo.H.B.2015_16.Temp
+
+ggplot(Pipo.H.B.All,aes(x=Date.Time))+
+  geom_line(aes(y=Pipo.H.B.2014_15.Temp,color='Pipo-H-B 2014-2015'))+
+  geom_line(aes(y=Pipo.H.B.2015_16.Temp,color='Pipo-H-B 2015-2016'))+
+  scale_x_datetime(limits=c(as.POSIXct('2014-11-01 1:01:00'),as.POSIXct('2014-12-01 1:01:00')))+
+  theme(legend.title=element_blank())
+
+ggplot(Pipo.H.B.2015_16,aes(x=Date.Time))+
+  geom_line(aes(y=Temp,color='Pipo-H-B'))+
+  scale_x_datetime(limits=c(as.POSIXct('2016-02-29 1:00:00'),as.POSIXct('2016-02-29 22:00:00')))+
+  theme(legend.title=element_blank())
+
+ggplot(Test,aes(x=Date.Time))+
+  geom_line(aes(y=Pipo.H.B.14_15,color='2014-2015'))+
+  geom_line(aes(y=Pipo.H.B15_16,color='2015-2016'))+
+  scale_x_datetime(limits=c(as.POSIXct('2014-12-15 1:00:00'),as.POSIXct('2015-01-01 1:00:00')))+
+  geom_abline(slope=0,intercept=0)+
+  theme(legend.title=element_blank())+
+  xlab('Date')+ylab('Temp')+ggtitle('Pipo-H-B')
+```
