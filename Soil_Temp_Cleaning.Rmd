@@ -28,9 +28,9 @@ Abla.L.2013_14<-Abla.L.2013_14 %>%
   mutate(DOY=yday(Date.Time)) %>%
   mutate(Plot='Abla.L')
 
-Pipo.L.2013_14<- read_csv('CO_soil_temps/2013-2014/TS4_13_d2_2AFDAC21_Fall13-June14_soilT_2013-14.csv',skip=13)%>%
-  rename('Temp'='Temperature','Date.Time'='DateTime') %>%
-  select(-c(Unit,Light))
+Pipo.L.2013_14<- read_csv('CO_soil_temps/2013-2014/TS4_13_d2_2AFDAC21_Fall13-June14_soilT_2013-14.csv')%>%
+  rename('Date.Time'='DateTime','Temp'='Temperature')%>%
+  select(-c(Light))
 Pipo.L.2013_14$Date.Time<-format(strptime(Pipo.L.2013_14$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
 Pipo.L.2013_14$Date.Time<-as_datetime(ymd_hm(Pipo.L.2013_14$Date.Time))
 Pipo.L.2013_14<-Pipo.L.2013_14 %>%
@@ -41,9 +41,9 @@ Pipo.L.2013_14<-Pipo.L.2013_14 %>%
   mutate(DOY=yday(Date.Time)) %>%
   mutate(Plot='Pipo.L')
 
-No.Location.1.2013_15<- read_csv('CO_soil_temps/2013-2014/undownloaded-TS1_13_B9_Fall13-June14_2013-14.csv',skip=13)%>%
-  rename('Temp'='Value','Date.Time'='Date/Time') %>%
-  select(-c(Unit))
+No.Location.1.2013_15<- read_csv('CO_soil_temps/2013-2014/undownloaded-TS1_2013_B9_Fall13-June14_2013-14.csv')%>%
+  rename('Temp'='Temperature','Date.Time'='DateTime') %>%
+  select(-c(Light))
 No.Location.1.2013_15$Date.Time<-format(strptime(No.Location.1.2013_15$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
 No.Location.1.2013_15$Date.Time<-as_datetime(ymd_hm(No.Location.1.2013_15$Date.Time))
 No.Location.1.2013_15<-No.Location.1.2013_15 %>%
@@ -66,6 +66,8 @@ No.Location.2.2013_15<-No.Location.2.2013_15 %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
   mutate(Plot='No.Plot')
+
+Y2013_14.Soil.Temp<-rbind.data.frame(Abla.L.2013_14,Pipo.L.2013_14,No.Location.1.2013_15,No.Location.2.2013_15)
 ```
 
 2014-2015 Data Cleaning/Formating
@@ -648,7 +650,13 @@ Potr.H.B.2018_19<-Potr.H.B.2018_19 %>%
 Y2018_19.Soil.Temp<-rbind.data.frame(Pipo.H.B.2018_19,Pipo.H.E.2018_19,Pipo.L.C.2018_19,Pipo.L.D.2018_19,Potr.H.A.2018_19,Potr.H.B.2018_19,Potr.H.D.2018_19,Potr.H.E.2018_19,Potr.L.D.2018_19)
 ```
 
-Testing Chunk
+Combining Year DataFrames into All
 ```{r}
+All.Years.Soil.Temp<-rbind.data.frame(Y2013_14.Soil.Temp,Y2014_15.Soil.Temp,Y2015_16.Soil.Temp,Y2016_17.Soil.Temp,Y2018_19.Soil.Temp)
 
+All.Years.Temp.Below.Zero<-All.Years.Soil.Temp %>%
+  filter(Temp<=0)
+
+All.Years.Temp.LessThan.Negative4<-All.Years.Temp.Below.Zero %>%
+  count(Temp<=-4)
 ```
