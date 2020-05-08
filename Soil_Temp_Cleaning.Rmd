@@ -6,11 +6,18 @@ output: html_document
 ---
 Libraries and Setting timezone for US/Denver to clear strptime warning
 ```{r,echo=FALSE, message=FALSE, results='hide'}
+#Temps are in C and Elev is in meters.
 library(tidyverse)
 library(ggplot2)
 library(lubridate)
 library(readr)
+library(ncdf4)
 Sys.setenv(TZ='America/Denver')
+#Potr.H is also Abla.L, Pipo.H is also Potr.L, these are the elevations bands
+Abla.H.Elev<-3463
+Potr.H.Elev<-3082
+Pipo.H.Elev<-2670
+Pipo.L.Elev<-2310
 ```
 
 2013-2014 Data Cleaning/Formatting
@@ -26,7 +33,8 @@ Abla.L.2013_14<-Abla.L.2013_14 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Abla.L')
+  mutate(Plot='Abla.L') %>%
+  mutate(Elev=Potr.H.Elev)
 
 Pipo.L.2013_14<- read_csv('CO_soil_temps/2013-2014/TS4_13_d2_2AFDAC21_Fall13-June14_soilT_2013-14.csv')%>%
   rename('Date.Time'='DateTime','Temp'='Temperature')%>%
@@ -39,7 +47,8 @@ Pipo.L.2013_14<-Pipo.L.2013_14 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.L')
+  mutate(Plot='Pipo.L') %>%
+  mutate(Elev=Potr.H.Elev)
 
 No.Location.1.2013_15<- read_csv('CO_soil_temps/2013-2014/undownloaded-TS1_2013_B9_Fall13-June14_2013-14.csv')%>%
   rename('Temp'='Temperature','Date.Time'='DateTime') %>%
@@ -52,22 +61,24 @@ No.Location.1.2013_15<-No.Location.1.2013_15 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='No.Plot')
+  mutate(Plot='No.Plot') %>%
+  mutate(Elev='N/A')
 
-No.Location.2.2013_15<- read_csv('CO_soil_temps/2013-2014/TS3_13_81_2AE2FE21_Fall13-June14.csv',skip=13)%>%
+Pipo.H.2013_15<- read_csv('CO_soil_temps/2013-2014/TS3_13_81_2AE2FE21_Fall13-June14.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
   select(-c(Unit))
-No.Location.2.2013_15$Date.Time<-format(strptime(No.Location.2.2013_15$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
-No.Location.2.2013_15$Date.Time<-as_datetime(ymd_hm(No.Location.2.2013_15$Date.Time))
-No.Location.2.2013_15<-No.Location.2.2013_15 %>%
+Pipo.H.2013_15$Date.Time<-format(strptime(Pipo.H.2013_15$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Pipo.H.2013_15$Date.Time<-as_datetime(ymd_hm(Pipo.H.2013_15$Date.Time))
+Pipo.H.2013_15<-Pipo.H.2013_15 %>%
   mutate(Year=year(Date.Time))%>%
   mutate(Month=month(Date.Time))%>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='No.Plot')
+  mutate(Plot='Pipo.H') %>%
+  mutate(Elev=Pipo.H.Elev)
 
-Y2013_14.Soil.Temp<-rbind.data.frame(Abla.L.2013_14,Pipo.L.2013_14,No.Location.1.2013_15,No.Location.2.2013_15)
+Y2013_14.Soil.Temp<-rbind.data.frame(Abla.L.2013_14,Pipo.L.2013_14,No.Location.1.2013_15,Pipo.H.2013_15)
 ```
 
 2014-2015 Data Cleaning/Formating
@@ -84,7 +95,8 @@ Pipo.H.E.2014_15<-Pipo.H.E.2014_15 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.H.E')
+  mutate(Plot='Pipo.H.E') %>%
+  mutate(Elev=Pipo.H.Elev)
 
 Pipo.H.B.2014_15 <- read_csv('CO_soil_temps/2014-2015/T49L_14_PIPO-H-B_091314-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -97,7 +109,8 @@ Pipo.H.B.2014_15<-Pipo.H.B.2014_15 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.H.B')
+  mutate(Plot='Pipo.H.B') %>%
+  mutate(Elev=Pipo.H.Elev)
 
 Pipo.L.C.2014_15 <- read_csv('CO_soil_temps/2014-2015/T50L_14_PIPO-L-C_062014-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -110,7 +123,8 @@ Pipo.L.C.2014_15<-Pipo.L.C.2014_15 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.L.C')
+  mutate(Plot='Pipo.L.C') %>%
+  mutate(Elev=Pipo.L.Elev)
 
 Pipo.L.D.2014_15 <- read_csv('CO_soil_temps/2014-2015/T59L_14_PIPO-L-D_070314-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -123,7 +137,8 @@ Pipo.L.D.2014_15<-Pipo.L.D.2014_15 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.L.D')
+  mutate(Plot='Pipo.L.D') %>%
+  mutate(Elev=Pipo.L.Elev)
 
 Pipo.L.A.2014_15 <- read_csv('CO_soil_temps/2014-2015/T63L_14_PIPO-L-A_091314-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -136,7 +151,8 @@ Pipo.L.A.2014_15<-Pipo.L.A.2014_15 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.L.A') 
+  mutate(Plot='Pipo.L.A') %>%
+  mutate(Elev=Pipo.L.Elev)
 
 #POTR Plots
 Potr.H.B.2014_15 <- read_csv('CO_soil_temps/2014-2015/T28L_14_POTR-H-B_070314-063015_soil.csv',skip=13)%>%
@@ -150,7 +166,8 @@ Potr.H.B.2014_15<-Potr.H.B.2014_15 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Potr.H.B')
+  mutate(Plot='Potr.H.B') %>%
+  mutate(Elev=Potr.H.Elev)
 
 Potr.H.A.2014_15 <- read_csv('CO_soil_temps/2014-2015/T45L_14_POTR-H-A_062014-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -163,7 +180,8 @@ Potr.H.A.2014_15<-Potr.H.A.2014_15 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Potr.H.A') 
+  mutate(Plot='Potr.H.A') %>%
+  mutate(Elev=Potr.H.Elev)
 
 #ABLA Plots
 Abla.H.D.2014_15 <- read_csv('CO_soil_temps/2014-2015/T22L_14_ABLA-H-D_070314-XXXXXX_soil.csv',skip=13)%>%
@@ -177,7 +195,8 @@ Abla.H.D.2014_15 <- Abla.H.D.2014_15 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Abla.H.D') 
+  mutate(Plot='Abla.H.D') %>%
+  mutate(Elev=Abla.H.Elev)
 
 Abla.L.B.2014_15 <- read_csv('CO_soil_temps/2014-2015/T23L_14_ABLA-L-B_062014-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -190,7 +209,8 @@ Abla.L.B.2014_15<-Abla.L.B.2014_15 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Abla.L.D')
+  mutate(Plot='Abla.L.D') %>%
+  mutate(Elev=Potr.H.Elev)
 
 Y2014_15.Soil.Temp<-rbind.data.frame(Abla.H.D.2014_15,Abla.L.B.2014_15,Pipo.H.B.2014_15,Pipo.H.E.2014_15,Pipo.L.A.2014_15,Pipo.L.C.2014_15,Pipo.L.D.2014_15,Potr.H.A.2014_15,Potr.H.B.2014_15)
 ```
@@ -214,7 +234,8 @@ Pipo.H.B.2015_16<-Pipo.H.B.2015_16 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.H.B')
+  mutate(Plot='Pipo.H.B') %>%
+  mutate(Elev=Pipo.H.Elev)
 
 Pipo.H.E.2015_16<- read_csv('CO_soil_temps/2015-2016/T36L_14_PIPO-H-E_082515-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -227,7 +248,8 @@ Pipo.H.E.2015_16<-Pipo.H.E.2015_16 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.H.E')
+  mutate(Plot='Pipo.H.E') %>%
+  mutate(Elev=Pipo.H.Elev)
 
 Pipo.L.C.2015_16<- read_csv('CO_soil_temps/2015-2016/T50L_14_PIPO-L-C_082515-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -240,7 +262,8 @@ Pipo.L.C.2015_16<-Pipo.L.C.2015_16 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.L.C')
+  mutate(Plot='Pipo.L.C') %>%
+  mutate(Elev=Pipo.L.Elev)
 
 Pipo.L.A.2015_16<- read_csv('CO_soil_temps/2015-2016/T57L_14_PIPO-L-A_082515-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -253,7 +276,8 @@ Pipo.L.A.2015_16<-Pipo.L.A.2015_16 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.L.A')
+  mutate(Plot='Pipo.L.A') %>%
+  mutate(Elev=Pipo.L.Elev)
 
 #Collected in 2017
 Pipo.L.D.2015_16<- read_csv('CO_soil_temps/2015-2016/TS3_13_PIPO-L-D_092415-XXXXXX_soil_from2015butcollected2017.csv',skip=13)%>%
@@ -267,7 +291,8 @@ Pipo.L.D.2015_16<-Pipo.L.D.2015_16 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.L.D')
+  mutate(Plot='Pipo.L.D') %>%
+  mutate(Elev=Pipo.L.Elev)
 
 #POTR
 Potr.H.A.2015_16<- read_csv('CO_soil_temps/2015-2016/T39L_14_POTR-H-A_082515-XXXXXX_soil.csv',skip=13)%>%
@@ -281,7 +306,8 @@ Potr.H.A.2015_16<-Potr.H.A.2015_16 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Potr.H.A')
+  mutate(Plot='Potr.H.A') %>%
+  mutate(Elev=Pipo.H.Elev)
 
 Potr.H.B.2015_16<- read_csv('CO_soil_temps/2015-2016/T4L_14_POTR-H-B_082515-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -294,7 +320,8 @@ Potr.H.B.2015_16<-Potr.H.B.2015_16 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Potr.H.B')
+  mutate(Plot='Potr.H.B') %>%
+  mutate(Elev=Potr.H.Elev)
 
 Potr.L.C.2015_16<- read_csv('CO_soil_temps/2015-2016/T18L_14_POTR-L-C_082515-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -307,7 +334,8 @@ Potr.L.C.2015_16<-Potr.L.C.2015_16 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Potr.L.C')
+  mutate(Plot='Potr.L.C') %>%
+  mutate(Elev=Pipo.H.Elev)
 
 #ABLA
 Abla.L.B.2015_16<- read_csv('CO_soil_temps/2015-2016/T14L_14_ABLA-L-B_082515-XXXXXX_soil.csv',skip=13)%>%
@@ -321,7 +349,8 @@ Abla.L.B.2015_16<-Abla.L.B.2015_16 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Abla.L.B')
+  mutate(Plot='Abla.L.B') %>%
+  mutate(Elev=Potr.H.Elev)
 
 Abla.H.A.2015_16<- read_csv('CO_soil_temps/2015-2016/T22L_14_ABLA-H-A_082515-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -334,7 +363,8 @@ Abla.H.A.2015_16<-Abla.H.A.2015_16 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Abla.H.A')
+  mutate(Plot='Abla.H.A') %>%
+  mutate(Elev=Abla.H.Elev)
 
 Abla.H.D.2015_16<- read_csv('CO_soil_temps/2015-2016/T23L_14_ABLA-H-D_082515-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -347,7 +377,8 @@ Abla.H.D.2015_16<-Abla.H.D.2015_16 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Abla.H.D')
+  mutate(Plot='Abla.H.D') %>%
+  mutate(Elev=Abla.H.Elev)
 
 Abla.H.C.2015_16<- read_csv('CO_soil_temps/2015-2016/T30L_14_ABLA-H-C_082515-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -360,13 +391,15 @@ Abla.H.C.2015_16<-Abla.H.C.2015_16 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Abla.H.C')
+  mutate(Plot='Abla.H.C') %>%
+  mutate(Elev=Abla.H.Elev)
 
 Y2015_16.Soil.Temp<-rbind.data.frame(Abla.H.A.2015_16,Abla.H.C.2015_16,Abla.H.D.2015_16,Abla.L.B.2015_16,Potr.H.A.2015_16,Potr.H.B.2015_16,Potr.L.C.2015_16,Pipo.H.B.2015_16,Pipo.H.E.2015_16,Pipo.L.A.2015_16,Pipo.L.C.2015_16,Pipo.L.D.2015_16)
 ```
 
 2015-2016 Histogram/Graphs
 ```{r}
+#PIPO
 
 ```
 
@@ -384,7 +417,8 @@ Pipo.H.B.2016_17<-Pipo.H.B.2016_17 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.H.B')
+  mutate(Plot='Pipo.H.B') %>%
+  mutate(Elev=Pipo.H.Elev)
 
 Pipo.H.E.2016_17<- read_csv('CO_soil_temps/2016-2017/T41L_14_PIPO-H-E_090416-070717_soil_ranover.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -397,7 +431,8 @@ Pipo.H.E.2016_17<-Pipo.H.E.2016_17 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.H.E')
+  mutate(Plot='Pipo.H.E') %>%
+  mutate(Elev=Pipo.H.Elev)
 
 Pipo.L.C.2016_17<- read_csv('CO_soil_temps/2016-2017/T54L_14_PIPO-L-C_090416-070617_soil_ranover.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -410,7 +445,8 @@ Pipo.L.C.2016_17<-Pipo.L.C.2016_17 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.L.C')
+  mutate(Plot='Pipo.L.C') %>%
+  mutate(Elev=Pipo.L.Elev)
 
 Pipo.L.A.2016_17<- read_csv('CO_soil_temps/2016-2017/T61L_14_PIPO-L-A_090416-070617_soil_ranover.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -423,7 +459,8 @@ Pipo.L.A.2016_17<-Pipo.L.A.2016_17 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.L.A')
+  mutate(Plot='Pipo.L.A') %>%
+  mutate(Elev=Pipo.L.Elev)
 
 #POTR
 Potr.L.D.2016_17<- read_csv('CO_soil_temps/2016-2017/T43_14_Potr-L-D_090416-070717_soil_ranover.csv',skip=13)%>%
@@ -437,7 +474,8 @@ Potr.L.D.2016_17<-Potr.L.D.2016_17 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Potr.L.D')
+  mutate(Plot='Potr.L.D') %>%
+  mutate(Elev=Pipo.H.Elev)
 
 Potr.H.A.2016_17<- read_csv('CO_soil_temps/2016-2017/T49L_14_Potr-H-A_090316-070617_soil_ranover.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -450,7 +488,8 @@ Potr.H.A.2016_17<-Potr.H.A.2016_17 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Potr.H.A')
+  mutate(Plot='Potr.H.A') %>%
+  mutate(Elev=Potr.H.Elev)
 
 Potr.H.B.2016_17<- read_csv('CO_soil_temps/2016-2017/T63L_14_Potr-H-B_090316-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -463,7 +502,8 @@ Potr.H.B.2016_17<-Potr.H.B.2016_17 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Potr.H.B')
+  mutate(Plot='Potr.H.B') %>%
+  mutate(Elev=Potr.H.Elev)
 
 #ABLA
 Abla.H.C.2016_17<- read_csv('CO_soil_temps/2016-2017/T16L_14_ABLA-H-C_090316-070617_soil_ranover.csv',skip=13)%>%
@@ -477,7 +517,8 @@ Abla.H.C.2016_17<-Abla.H.C.2016_17 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Abla.H.C')
+  mutate(Plot='Abla.H.C') %>%
+  mutate(Elev=Abla.H.Elev)
 
 Abla.L.B.2016_17<- read_csv('CO_soil_temps/2016-2017/T20L_14_ABLA-L-B_090316-070617_soil_ranover.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -490,7 +531,8 @@ Abla.L.B.2016_17<-Abla.L.B.2016_17 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Abla.L.B')
+  mutate(Plot='Abla.L.B') %>%
+  mutate(Elev=Potr.H.Elev)
 
 Abla.H.A.2016_17<- read_csv('CO_soil_temps/2016-2017/T46L_14_ABLA-H-A_090316-070617_soil_ranover.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -503,7 +545,8 @@ Abla.H.A.2016_17<-Abla.H.A.2016_17 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Abla.H.A')
+  mutate(Plot='Abla.H.A') %>%
+  mutate(Elev=Abla.H.Elev)
 
 Abla.H.D.2016_17<- read_csv('CO_soil_temps/2016-2017/TS1_13_ABLA-H-D_090316-070617_soil_ranover.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -516,14 +559,184 @@ Abla.H.D.2016_17<-Abla.H.D.2016_17 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Abla.H.D')
+  mutate(Plot='Abla.H.D') %>%
+  mutate(Elev=Abla.H.Elev)
 
 Y2016_17.Soil.Temp<-rbind.data.frame(Pipo.H.B.2016_17,Pipo.H.E.2016_17,Pipo.L.A.2016_17,Pipo.L.C.2016_17,Potr.H.A.2016_17,Potr.H.B.2016_17,Potr.L.D.2016_17,Abla.H.C.2016_17,Abla.H.A.2016_17,Abla.H.D.2016_17,Abla.L.B.2016_17)
 ```
 
-2016-2017 Histogram/Graphs
-```{r}
+2017-2018 Data Cleaning/Formatting
+```{r,echo=FALSE,message=FALSE,results='hide'}
+#PIPO
+Pipo.L.D.2017_18 <- read_csv('CO_soil_temps/2017-2018/T22L_14_PIPO-L-D_091517-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Pipo.L.D.2017_18$Date.Time<-format(strptime(Pipo.L.D.2017_18$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Pipo.L.D.2017_18$Date.Time<-as_datetime(ymd_hm(Pipo.L.D.2017_18$Date.Time))
+Pipo.L.D.2017_18<-Pipo.L.D.2017_18 %>%
+  mutate(Year=year(Date.Time))%>%
+  mutate(Month=month(Date.Time))%>%
+  mutate(Day=day(Date.Time)) %>%
+  mutate(Hour=hour(Date.Time)) %>%
+  mutate(DOY=yday(Date.Time)) %>%
+  mutate(Plot='Pipo.L.D') %>%
+  mutate(Elev=Pipo.L.Elev)
 
+Pipo.H.B.2017_18 <- read_csv('CO_soil_temps/2017-2018/T23L_14_PIPO-H-B_091517-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Pipo.H.B.2017_18$Date.Time<-format(strptime(Pipo.H.B.2017_18$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Pipo.H.B.2017_18$Date.Time<-as_datetime(ymd_hm(Pipo.H.B.2017_18$Date.Time))
+Pipo.H.B.2017_18<-Pipo.H.B.2017_18 %>%
+  mutate(Year=year(Date.Time))%>%
+  mutate(Month=month(Date.Time))%>%
+  mutate(Day=day(Date.Time)) %>%
+  mutate(Hour=hour(Date.Time)) %>%
+  mutate(DOY=yday(Date.Time)) %>%
+  mutate(Plot='Pipo.L.D') %>%
+  mutate(Elev=Pipo.H.Elev)
+
+Pipo.L.C.2017_18 <- read_csv('CO_soil_temps/2017-2018/T32L_14_PIPO-L-C_091517-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Pipo.L.C.2017_18$Date.Time<-format(strptime(Pipo.L.C.2017_18$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Pipo.L.C.2017_18$Date.Time<-as_datetime(ymd_hm(Pipo.L.C.2017_18$Date.Time))
+Pipo.L.C.2017_18<-Pipo.L.C.2017_18 %>%
+  mutate(Year=year(Date.Time))%>%
+  mutate(Month=month(Date.Time))%>%
+  mutate(Day=day(Date.Time)) %>%
+  mutate(Hour=hour(Date.Time)) %>%
+  mutate(DOY=yday(Date.Time)) %>%
+  mutate(Plot='Pipo.L.C') %>%
+  mutate(Elev=Pipo.L.Elev)
+
+Pipo.L.A.2017_18 <- read_csv('CO_soil_temps/2017-2018/T45L_14_PIPO-L-A_091517-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Pipo.L.A.2017_18$Date.Time<-format(strptime(Pipo.L.A.2017_18$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Pipo.L.A.2017_18$Date.Time<-as_datetime(ymd_hm(Pipo.L.A.2017_18$Date.Time))
+Pipo.L.A.2017_18<-Pipo.L.A.2017_18 %>%
+  mutate(Year=year(Date.Time))%>%
+  mutate(Month=month(Date.Time))%>%
+  mutate(Day=day(Date.Time)) %>%
+  mutate(Hour=hour(Date.Time)) %>%
+  mutate(DOY=yday(Date.Time)) %>%
+  mutate(Plot='Pipo.L.A') %>%
+  mutate(Elev=Pipo.L.Elev)
+
+#POTR
+Potr.H.B.2017_18 <- read_csv('CO_soil_temps/2017-2018/T10L_13_POTR-H-B_091517-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Potr.H.B.2017_18$Date.Time<-format(strptime(Potr.H.B.2017_18$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Potr.H.B.2017_18$Date.Time<-as_datetime(ymd_hm(Potr.H.B.2017_18$Date.Time))
+Potr.H.B.2017_18<-Potr.H.B.2017_18 %>%
+  mutate(Year=year(Date.Time))%>%
+  mutate(Month=month(Date.Time))%>%
+  mutate(Day=day(Date.Time)) %>%
+  mutate(Hour=hour(Date.Time)) %>%
+  mutate(DOY=yday(Date.Time)) %>%
+  mutate(Plot='Potr.H.B') %>%
+  mutate(Elev=Potr.H.Elev)
+
+Potr.H.D.2017_18 <- read_csv('CO_soil_temps/2017-2018/T18L_14_POTR-H-D_091517-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Potr.H.D.2017_18$Date.Time<-format(strptime(Potr.H.D.2017_18$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Potr.H.D.2017_18$Date.Time<-as_datetime(ymd_hm(Potr.H.D.2017_18$Date.Time))
+Potr.H.D.2017_18<-Potr.H.D.2017_18 %>%
+  mutate(Year=year(Date.Time))%>%
+  mutate(Month=month(Date.Time))%>%
+  mutate(Day=day(Date.Time)) %>%
+  mutate(Hour=hour(Date.Time)) %>%
+  mutate(DOY=yday(Date.Time)) %>%
+  mutate(Plot='Potr.H.D') %>%
+  mutate(Elev=Potr.H.Elev)
+
+Potr.H.E.2017_18 <- read_csv('CO_soil_temps/2017-2018/T36L_14_POTR-H-E_091517-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Potr.H.E.2017_18$Date.Time<-format(strptime(Potr.H.E.2017_18$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Potr.H.E.2017_18$Date.Time<-as_datetime(ymd_hm(Potr.H.E.2017_18$Date.Time))
+Potr.H.E.2017_18<-Potr.H.E.2017_18 %>%
+  mutate(Year=year(Date.Time))%>%
+  mutate(Month=month(Date.Time))%>%
+  mutate(Day=day(Date.Time)) %>%
+  mutate(Hour=hour(Date.Time)) %>%
+  mutate(DOY=yday(Date.Time)) %>%
+  mutate(Plot='Potr.H.E') %>%
+  mutate(Elev=Potr.H.Elev)
+
+Potr.H.A.2017_18 <- read_csv('CO_soil_temps/2017-2018/T4L_14_POTR-H-A_091517-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Potr.H.A.2017_18$Date.Time<-format(strptime(Potr.H.A.2017_18$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Potr.H.A.2017_18$Date.Time<-as_datetime(ymd_hm(Potr.H.A.2017_18$Date.Time))
+Potr.H.A.2017_18<-Potr.H.A.2017_18 %>%
+  mutate(Year=year(Date.Time))%>%
+  mutate(Month=month(Date.Time))%>%
+  mutate(Day=day(Date.Time)) %>%
+  mutate(Hour=hour(Date.Time)) %>%
+  mutate(DOY=yday(Date.Time)) %>%
+  mutate(Plot='Potr.H.A') %>%
+  mutate(Elev=Potr.H.Elev)
+
+Potr.L.D.2017_18 <- read_csv('CO_soil_temps/2017-2018/T8L_13_POTR-L-D_091517-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Potr.L.D.2017_18$Date.Time<-format(strptime(Potr.L.D.2017_18$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Potr.L.D.2017_18$Date.Time<-as_datetime(ymd_hm(Potr.L.D.2017_18$Date.Time))
+Potr.L.D.2017_18<-Potr.L.D.2017_18 %>%
+  mutate(Year=year(Date.Time))%>%
+  mutate(Month=month(Date.Time))%>%
+  mutate(Day=day(Date.Time)) %>%
+  mutate(Hour=hour(Date.Time)) %>%
+  mutate(DOY=yday(Date.Time)) %>%
+  mutate(Plot='Potr.L.D') %>%
+  mutate(Elev=Pipo.H.Elev)
+
+#ABLA
+Abla.H.D.2017_18 <- read_csv('CO_soil_temps/2017-2018/T14L_14_ABLA-H-D_091517-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Abla.H.D.2017_18$Date.Time<-format(strptime(Abla.H.D.2017_18$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Abla.H.D.2017_18$Date.Time<-as_datetime(ymd_hm(Abla.H.D.2017_18$Date.Time))
+Abla.H.D.2017_18<-Abla.H.D.2017_18 %>%
+  mutate(Year=year(Date.Time))%>%
+  mutate(Month=month(Date.Time))%>%
+  mutate(Day=day(Date.Time)) %>%
+  mutate(Hour=hour(Date.Time)) %>%
+  mutate(DOY=yday(Date.Time)) %>%
+  mutate(Plot='Abla.H.D') %>%
+  mutate(Elev=Abla.H.Elev)
+
+Abla.H.12H.2017_18 <- read_csv('CO_soil_temps/2017-2018/T4_13_ABLA-H-12H_091517-XXXXXX_soil_flag.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Abla.H.12H.2017_18$Date.Time<-format(strptime(Abla.H.12H.2017_18$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Abla.H.12H.2017_18$Date.Time<-as_datetime(ymd_hm(Abla.H.12H.2017_18$Date.Time))
+Abla.H.12H.2017_18<-Abla.H.12H.2017_18 %>%
+  mutate(Year=year(Date.Time))%>%
+  mutate(Month=month(Date.Time))%>%
+  mutate(Day=day(Date.Time)) %>%
+  mutate(Hour=hour(Date.Time)) %>%
+  mutate(DOY=yday(Date.Time)) %>%
+  mutate(Plot='Abla.H.12H') %>%
+  mutate(Elev=Abla.H.Elev)
+
+Abla.H.C.2017_18 <- read_csv('CO_soil_temps/2017-2018/TS2_13_ABLa-H-C_091517-XXXXXX_soil.csv',skip=13)%>%
+  rename('Temp'='Value','Date.Time'='Date/Time') %>%
+  select(-c(Unit))
+Abla.H.C.2017_18$Date.Time<-format(strptime(Abla.H.C.2017_18$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+Abla.H.C.2017_18$Date.Time<-as_datetime(ymd_hm(Abla.H.C.2017_18$Date.Time))
+Abla.H.C.2017_18<-Abla.H.C.2017_18 %>%
+  mutate(Year=year(Date.Time))%>%
+  mutate(Month=month(Date.Time))%>%
+  mutate(Day=day(Date.Time)) %>%
+  mutate(Hour=hour(Date.Time)) %>%
+  mutate(DOY=yday(Date.Time)) %>%
+  mutate(Plot='Abla.H.C') %>%
+  mutate(Elev=Abla.H.Elev)
 ```
 
 2018-2019 Data Cleaning/Formatting
@@ -540,7 +753,8 @@ Pipo.L.C.2018_19<-Pipo.L.C.2018_19 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.L.C')
+  mutate(Plot='Pipo.L.C') %>%
+  mutate(Elev=Pipo.L.Elev)
 
 Pipo.H.B.2018_19<- read_csv('CO_soil_temps/2018-2019/T41L_14_PIPO-H-B_090718-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -553,7 +767,8 @@ Pipo.H.B.2018_19<-Pipo.H.B.2018_19 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.H.B')
+  mutate(Plot='Pipo.H.B') %>%
+  mutate(Elev=Pipo.H.Elev)
 
 Pipo.H.E.2018_19<- read_csv('CO_soil_temps/2018-2019/T53L_14_PIPO-H-E_090718-XXXXXX_soil_found on soil surface chewed.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -566,7 +781,8 @@ Pipo.H.E.2018_19<-Pipo.H.E.2018_19 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.H.E')
+  mutate(Plot='Pipo.H.E') %>%
+  mutate(Elev=Pipo.H.Elev)
 
 Pipo.L.D.2018_19<- read_csv('CO_soil_temps/2018-2019/T48L_14_PIPO-L-D_090718-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -579,7 +795,8 @@ Pipo.L.D.2018_19<-Pipo.L.D.2018_19 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Pipo.L.D')
+  mutate(Plot='Pipo.L.D') %>%
+  mutate(Elev=Pipo.L.Elev)
 
 #POTR
 Potr.H.A.2018_19<- read_csv('CO_soil_temps/2018-2019/T33L_14_POTR-H-A_090718-XXXXXX_soil.csv',skip=13)%>%
@@ -593,7 +810,8 @@ Potr.H.A.2018_19<-Potr.H.A.2018_19 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Potr.H.A')
+  mutate(Plot='Potr.H.A') %>%
+  mutate(Elev=Potr.H.Elev)
 
 Potr.H.D.2018_19<- read_csv('CO_soil_temps/2018-2019/T38L_14_POTR-H-D_090718-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -606,7 +824,8 @@ Potr.H.D.2018_19<-Potr.H.D.2018_19 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Potr.H.D')
+  mutate(Plot='Potr.H.D') %>%
+  mutate(Elev=Potr.H.Elev)
 
 Potr.L.D.2018_19<- read_csv('CO_soil_temps/2018-2019/T43L_14_POTR-L-D_090718-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -619,7 +838,8 @@ Potr.L.D.2018_19<-Potr.L.D.2018_19 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Potr.L.D')
+  mutate(Plot='Potr.L.D') %>%
+  mutate(Elev=Pipo.H.Elev)
 
 Potr.H.E.2018_19<- read_csv('CO_soil_temps/2018-2019/T49L_14_POTR-H-E_090718-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -632,7 +852,8 @@ Potr.H.E.2018_19<-Potr.H.E.2018_19 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Potr.H.E')
+  mutate(Plot='Potr.H.E') %>%
+  mutate(Elev=Potr.H.Elev)
 
 Potr.H.B.2018_19<- read_csv('CO_soil_temps/2018-2019/T63L_14_POTR-H-B_090718-XXXXXX_soil.csv',skip=13)%>%
   rename('Temp'='Value','Date.Time'='Date/Time') %>%
@@ -645,12 +866,13 @@ Potr.H.B.2018_19<-Potr.H.B.2018_19 %>%
   mutate(Day=day(Date.Time)) %>%
   mutate(Hour=hour(Date.Time)) %>%
   mutate(DOY=yday(Date.Time)) %>%
-  mutate(Plot='Potr.H.B')
+  mutate(Plot='Potr.H.B') %>%
+  mutate(Elev=Potr.H.Elev)
 
 Y2018_19.Soil.Temp<-rbind.data.frame(Pipo.H.B.2018_19,Pipo.H.E.2018_19,Pipo.L.C.2018_19,Pipo.L.D.2018_19,Potr.H.A.2018_19,Potr.H.B.2018_19,Potr.H.D.2018_19,Potr.H.E.2018_19,Potr.L.D.2018_19)
 ```
 
-Combining Year DataFrames into All
+Analysis
 ```{r}
 All.Years.Soil.Temp<-rbind.data.frame(Y2013_14.Soil.Temp,Y2014_15.Soil.Temp,Y2015_16.Soil.Temp,Y2016_17.Soil.Temp,Y2018_19.Soil.Temp)
 
@@ -658,5 +880,85 @@ All.Years.Temp.Below.Zero<-All.Years.Soil.Temp %>%
   filter(Temp<=0)
 
 All.Years.Temp.LessThan.Negative4<-All.Years.Temp.Below.Zero %>%
+  count(Temp<=-5)
+
+Potr.H.Elev.All.2018<-All.Years.Soil.Temp %>%
+  filter(Temp<=0,Elev==3082,Year==2018) %>%
+  count(Temp<=-5)
+
+Pipo.H.Elev.All.Years<-All.Years.Soil.Temp %>%
+  filter(Temp<=0,Elev==2670) %>%
   count(Temp<=-4)
+
+Pipo.L.Elev.All.Years<-All.Years.Soil.Temp %>%
+  filter(Temp<=0,Elev==2310) %>%
+  count(Temp<=-5)
+
+Abla.H.Elev.All.Years<-All.Years.Soil.Temp %>%
+  filter(Temp<=0,Elev==3463)%>%
+  count(Temp<=-4)
+
+Pipo.H.Elev.2013<-All.Years.Soil.Temp %>%
+  filter(Year==2013,Temp<=0,Elev==2670) %>%
+  count(Temp<=-4)
+
+Pipo.H.Elev.2014<-All.Years.Soil.Temp %>%
+  filter(Year==2014,Temp<=0,Elev==2670) %>%
+  count(Temp<=-4)
+
+Pipo.H.Elev.2015<-All.Years.Soil.Temp %>%
+  filter(Year==2015,Temp<=0,Elev==2670) %>%
+  count(Temp<=-4)
+
+Pipo.H.Elev.2016<-All.Years.Soil.Temp %>%
+  filter(Year==2016,Temp<=0,Elev==2670) %>%
+  count(Temp<=-4)
+
+Pipo.H.Elev.2017<-All.Years.Soil.Temp %>%
+  filter(Year==2017,Temp<=0,Elev==2670) %>%
+  count(Temp<=-4)
+
+Pipo.H.Elev.2018<-All.Years.Soil.Temp %>%
+  filter(Year==2018,Temp<=0,Elev==2670) %>%
+  count(Temp<=-5)
+
+Pipo.H.Elev.2019<-All.Years.Soil.Temp %>%
+  filter(Year==2019,Temp<=0,Elev==2670) %>%
+  count(Temp<=-4)
+
+Pipo.H.Elev.2018.A<-All.Years.Soil.Temp %>%
+  filter(Year==2018,Temp<=0,Elev==2670)
+
+Pipo.L.Elev.2018<-All.Years.Soil.Temp %>%
+  filter(Year==2018,Temp<=0,Elev==2310) %>%
+  count(Temp<=-5)
+
+Pipo.L.Elev.2018.A<-All.Years.Soil.Temp %>%
+  filter(Year==2018,Temp<=0,Elev==2310)
+```
+
+Terraclimate
+```{r}
+# enter in longitude, latitude here
+x<-c(37.71, -108.59)
+
+# enter in variable you want to download see: http://thredds.northwestknowledge.net:8080/thredds/terraclimate_aggregated.html
+var="ppt"
+
+baseurlagg <- paste0(paste0("http://thredds.northwestknowledge.net:8080/thredds/dodsC/agg_terraclimate_",var),"_1958_CurrentYear_GLOBE.nc")
+
+nc <- nc_open(baseurlagg)
+lon <- ncvar_get(nc, "lon")
+lat <- ncvar_get(nc, "lat")
+flat = match(abs(lat - x[2]) < 1/48, 1)
+latindex = which(flat %in% 1)
+flon = match(abs(lon - x[1]) < 1/48, 1)
+lonindex = which(flon %in% 1)
+start <- c(lonindex, latindex, 1)
+count <- c(1, 1, -1)
+
+
+# read in the full period of record using aggregated files
+
+data <- as.numeric(ncvar_get(nc, varid = var,start = start, count))
 ```
