@@ -1,0 +1,160 @@
+---
+title: "2014_Climate_Processing"
+author: "LDL Anderegg"
+date: "10/14/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(readr)
+library(ncdf4)
+
+#Sys.setenv(TZ='America/Denver')
+
+```
+
+## Goal: Import, clean and harmonize summer 2014 ibutton data for SJ Sperry Modeling group project
+
+
+```{r parsing file names}
+filenames <- dir("./CO_clim_14-15new_toprocess/")[grep(".csv",dir("./CO_clim_14-15new_toprocess/"))]
+
+fileinfo <- data.frame(filenames, sensorID=rep(NA, length(filenames)))
+
+fileinfo$sensorID <- paste(str_split(filenames, "_", simplify=T)[,1],str_split(filenames, "_", simplify=T)[,2] , sep="_")
+
+fileinfo$Site <- str_split(filenames, "_", simplify=T)[,3]
+  # remove alt-ID from ABLA-H-B (alt ID is ABLA-H-6H)
+fileinfo$Site[grep("B6H", fileinfo$Site)] <- "ABLA-H-B"
+
+fileinfo$startdate <- str_split(str_split(filenames, "_", simplify=T)[,4], "-", simplify = T)[,1]
+
+fileinfo$enddate <- str_replace(str_split(str_split(filenames, "_", simplify=T)[,4], "-", simplify = T)[,2],".csv","")
+# replace my filler "XXXXXX" date with "UNK" for unknown
+fileinfo$enddate[grep("X", fileinfo$enddate)] <- "UNK"
+
+fileinfo$flag <- str_replace(str_split(filenames, "_", simplify=T)[,5],".csv","")
+# pull out the 'temperature' ones (not a flag)
+fileinfo$flag[grep("tem", fileinfo$flag)] <- ""
+fileinfo$sensor_type <- "Temp"
+# make seperate column for humidity than kill flag
+fileinfo$sensor_type[grep("humidity", fileinfo$flag)] <- "rH"
+fileinfo$flag[grep("humidity", fileinfo$flag)] <- ""
+fileinfo$Location <- "Canopy"
+fileinfo$Location[grep("sap", fileinfo$flag)] <- "Sapling"
+fileinfo$Location[grep("soil", fileinfo$flag)] <- "Soil"
+
+# make a column for sensors that need to be truncated because of a flag
+fileinfo$Problem <- 0
+fileinfo$Problem[grep("fell", fileinfo$flag)] <- 1
+fileinfo$Problem[grep("lost", fileinfo$flag)] <- 1
+fileinfo$Problem[grep("found", fileinfo$flag)] <- 1
+
+
+### Read in deployment notes
+notes <- read.csv("CO_clim_14-15new_toprocess/DeploymentNotes/2014DeploymentNotes.csv", header=T)
+notes$Location <- str_replace(notes$Location, " ","")
+notes$SensorID <- str_replace(notes$SensorID, "2013","13")
+notes$SensorID <- str_replace(notes$SensorID, "2014","14")
+notes$SensorID <- str_replace(notes$SensorID, " ","")
+```
+
+I manually fixed file names:
+switching "-" to "_" where necessary: T1_13, T8H_14, T9L_80, T12L_14_PIPO
+
+adding plot ID to T11H (PIPO-H-C), T12L (PIPO-H-A), T43L (PIPO-H-E), T3H (POTR-L-D), 
+
+Removed long sensor ID and inserted plot for H4_14 (PIPO-H-B) temp and rH
+
+inserted "-" between start and end date in H2_14
+inserted "_" in '_lostshield' T5L
+
+fixed "T13_14" -> "T13H_14"
+
+fixed "T18L_14" -> "T18L2_14"
+
+fixed "T9L_80" -> "T9L_13"
+
+
+
+## Load ibutton data
+
+NOTE: it appears that most ibuttons were deployed within 1 day of their start date. Most filled up before they were collected, but some did not. Need to delete the first ~3 days of data to be safe and decide how to handle the last XX days
+
+```{r load ibuttons, echo=FALSE, message=F, warning=F}
+# Note: turn message= and warning= back on to troubleshoot
+
+all.data <- list()
+
+for (i in 1:nrow(fileinfo)){
+  # variable rows to skip, also check time zone
+  tmp <- readLines(paste0("./CO_clim_14-15new_toprocess/",fileinfo$filenames[i]), n=35) # hopefully no format has >35 row header
+  toskip <- grep("Date", tmp)-1
+  Starttime <- str_replace(tmp[grep("Mission Start", tmp)], "Mission Start","")
+all.data[[i]] <- read_csv(paste0("./CO_clim_14-15new_toprocess/",fileinfo$filenames[i]),skip=toskip) %>%
+  rename('Date.Time'='Date/Time') 
+all.data[[i]]$Date.Time<-format(strptime(all.data[[i]]$Date.Time, '%m/%d/%y %I:%M:%S %p'), format='%Y/%m/%d %H:%M %p')
+all.data[[i]]$Date.Time<-as_datetime(ymd_hm(all.data[[i]]$Date.Time))
+
+all.data[[i]]<-all.data[[i]] %>%
+  mutate(Year=year(Date.Time))%>%
+  mutate(Month=month(Date.Time))%>%
+  mutate(Day=day(Date.Time)) %>%
+  mutate(Hour=hour(Date.Time)) %>%
+  mutate(DOY=yday(Date.Time))
+all.data[[i]]$sensorID <- fileinfo$sensorID[i]
+all.data[[i]]$Plot <- fileinfo$Site[i]
+all.data[[i]]$enddate <- fileinfo$enddate[i]
+all.data[[i]]$fileinfo_notes <- fileinfo$flag[i]
+all.data[[i]]$flag_fileinfo <- fileinfo$Problem[i]
+all.data[[i]]$Location <- fileinfo$Location[i]
+all.data[[i]]$Starttime <- rep(Starttime, nrow(all.data[[i]]))
+all.data[[i]]$deployed <- notes$date.deployed[which(notes$SensorID==fileinfo$sensorID[i])]
+all.data[[i]]$zero.pt <- notes$zero.pt[which(notes$SensorID==fileinfo$sensorID[i])]
+all.data[[i]]$Plot2 <- notes$Location[which(notes$SensorID==fileinfo$sensorID[i])]
+all.data[[i]]$AdJuv <- notes$AdvJuv[which(notes$SensorID==fileinfo$sensorID[i])]
+all.data[[i]]$flag_notes <- notes$Flag[which(notes$SensorID==fileinfo$sensorID[i])]
+all.data[[i]]$flag_notesdescription <- notes$Flag_description[which(notes$SensorID==fileinfo$sensorID[i])]
+all.data[[i]]$Height <- notes$app.height[which(notes$SensorID==fileinfo$sensorID[i])]
+all.data[[i]]$Collected <- strptime(notes$collected[which(notes$SensorID==fileinfo$sensorID[i])], format= "%m/%d/%y", tz = "MST")
+
+
+
+}
+
+```
+
+
+
+``` {r first plots}
+
+for(i in 1:length(all.data)){
+  plot(Value~Date.Time, all.data[[i]], ylab=all.data[[i]]$Unit[1], main=paste(all.data[[i]]$Plot[1], all.data[[i]]$Location[1], "Flag:",all.data[[i]]$flag_fileinfo[1], all.data[[i]]$flag_notes[1]), type="l")
+}
+  
+
+```
+
+``` {r compile cut and clean}
+climdata <- data.frame()
+for(i in 1:length(all.data)){
+  tmp <- all.data[[i]]
+  tmp1  <- tmp[which(tmp$Date.Time > min(tmp$Date.Time)+days(3) & tmp$Date.Time < tmp$Collected),] # drop the first three days & drop days post collection
+  climdata <- rbind(climdata, tmp1)
+}
+
+# split apart Temp and rH data
+Tempall <- climdata[which(climdata$Unit=="C"),]
+# get rid of soil data
+Temp <- Tempall[which(climdata$Location %in% c("Canopy","Sapling")),]
+Temp <- Temp[which(Temp$flag_fileinfo != 1 & Temp$flag_notes !="Y"),]
+
+xtabs(~Plot+sensorID, Temp)
+
+
+RH <- climdata[which(climdata$Unit=="%RH"),]
+```
